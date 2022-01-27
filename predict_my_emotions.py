@@ -3,10 +3,10 @@ from keras.models import load_model
 import cv2 as cv
 import time
 
-emotions=['Angry', 'Disgust','Afraid', 'Happy', 'Sad', 'Surprise', 'Neutral']
-
+num_frames=1
 font = cv.FONT_HERSHEY_SIMPLEX
 
+emotions=['Angry', 'Disgust','Afraid', 'Happy', 'Sad', 'Surprise', 'Neutral']
 modelA=load_model('./pretrained_models/fer_best_models/ModelA_66,39_-1,06val_68,68_-1,02test.h5')
 
 faceCascade = cv.CascadeClassifier('./pretrained_models/face_detection/haarcascade_frontalface_default.xml')
@@ -15,14 +15,13 @@ video_capture = cv.VideoCapture(0)
 
 while True:
     
+    start = time.time()
     ret, frame = video_capture.read()
-
     gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-
     faces = faceCascade.detectMultiScale(gray)
 
-    
     for (x, y, w, h) in faces:
+        
         roi_gray = gray[y:y + h, x:x + w]
         
         emotion_to_predict= cv.resize(roi_gray,(48,48),interpolation=cv.INTER_AREA)
@@ -32,11 +31,16 @@ while True:
         emotion=modelA.predict(emotion_to_predict)
         index_emotion=np.argmax(emotion[0], axis=0)
         
+        
 
         cv.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 4)
         cv.putText(frame, "Emotion :"+emotions[index_emotion], (7, 70), font, 1, (200, 0, 0), 1, cv.LINE_AA)
 
-    # Display the resulting frame
+    end = time.time()
+    seconds = end - start
+    fps  = num_frames / seconds
+    
+    cv.putText(frame, "FPS: " + str(round(fps)), (7,50), font, 1, (200, 0, 0))
     cv.imshow('Video', frame)
 
     if cv.waitKey(1) & 0xFF == ord('q'):
